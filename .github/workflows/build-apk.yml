@@ -21,7 +21,7 @@ jobs:
           java-version: '17'
 
       - name: Android SDK hazirla
-        uses: android-actions/setup-android@v3
+        uses: android-actions/setup-android@v4
 
       - name: Gradle kur
         uses: gradle/actions/setup-gradle@v6
