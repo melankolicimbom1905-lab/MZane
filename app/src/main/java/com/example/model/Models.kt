@@ -159,22 +159,32 @@ data class CustomFolder(
     val channelIds: List<String> = emptyList()
 )
 
+data class M3uPlaylist(
+    val id: String,
+    val name: String,
+    val url: String,
+    val channelCount: Int,
+    val dateAdded: String,
+    val isActive: Boolean = false,
+    val channels: List<Channel> = emptyList()
+)
+
 data class AccountInfo(
-    val serverUrl: String = "http://stream.globalcdn.live:8080",
+    val serverUrl: String = "https://stream.globalcdn.live:8080",
     val username: String = "vip_abone_2026",
     val status: String = "Aktif (Premium)",
     val expiryDate: String = "18.11.2027",
     val maxConnections: Int = 3,
     val activeConnections: Int = 1,
-    val m3uUrl: String = "http://stream.globalcdn.live:8080/get.php?username=vip&type=m3u_plus",
-    val serverProtocol: String = "HLS / MPEG-TS / VOD"
+    val m3uUrl: String = "https://stream.globalcdn.live:8080/get.php?username=vip&type=m3u_plus",
+    val serverProtocol: String = "HLS / M3U8 / MPEG-TS / VOD"
 )
 
 data class AppSettings(
     val theme: ThemeType = ThemeType.TITANIUM_DARK,
     val showGenresMenu: Boolean = true,
     val hideAdult: Boolean = true,
-    val advancedPlayerStats: Boolean = true,
+    val advancedPlayerStats: Boolean = false,
     val traktConnected: Boolean = false,
     val traktUsername: String = "Kullanıcı",
     val kidsModeActive: Boolean = false,

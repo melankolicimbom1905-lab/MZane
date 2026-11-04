@@ -234,56 +234,7 @@ fun VideoPlayerView(
             }
         }
 
-        // Advanced Stats Overlay (as specified in "Gelişmiş İstatistikler")
-        if (settings.advancedPlayerStats) {
-            Box(
-                modifier = Modifier
-                    .align(Alignment.TopStart)
-                    .padding(top = 56.dp, start = 12.dp)
-                    .background(Color(0xCC111827), RoundedCornerShape(8.dp))
-                    .padding(horizontal = 8.dp, vertical = 6.dp)
-            ) {
-                Column {
-                    Text(
-                        text = "İSTATİSTİK (TEKNİK BİLGİ)",
-                        color = Color(0xFF38BDF8),
-                        fontSize = 10.sp,
-                        fontWeight = FontWeight.Bold
-                    )
-                    Text(
-                        text = "Çözünürlük: 1920x1080@60fps • Codec: H.264",
-                        color = Color(0xFFE2E8F0),
-                        fontSize = 9.sp
-                    )
-                    Text(
-                        text = "Bitrate: 6,450 kbps • Arabellek: ${settings.bufferMode.displayName.split(" ").first()}",
-                        color = Color(0xFF94A3B8),
-                        fontSize = 9.sp
-                    )
-                    Text(
-                        text = "DNS: ${settings.dnsProvider.displayName.split(" ").first()} • HW Accel: ${if (settings.hwAcceleration) "Aktif" else "Kapalı"}",
-                        color = Color(0xFF94A3B8),
-                        fontSize = 9.sp
-                    )
-                }
-            }
-        }
 
-        // Subtitle Preview (if active)
-        Box(
-            modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .padding(bottom = if (showControls) 90.dp else 24.dp)
-                .background(Color(0x99000000), RoundedCornerShape(4.dp))
-                .padding(horizontal = 8.dp, vertical = 2.dp)
-        ) {
-            Text(
-                text = "• Canlı Yayın Senkronize Edildi •",
-                color = Color(0xFFFFEB3B),
-                fontSize = settings.subtitleSize.sp,
-                fontWeight = FontWeight.Medium
-            )
-        }
 
         // Overlay Controls
         AnimatedVisibility(

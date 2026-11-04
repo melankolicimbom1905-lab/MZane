@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.data.SampleData
 import com.example.model.*
+import com.example.util.M3uParser
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -75,7 +76,13 @@ data class MainUiState(
     val ambientThemes: List<AmbientTheme> = SampleData.sampleAmbientThemes,
     val selectedAmbientTheme: AmbientTheme = SampleData.sampleAmbientThemes.first(),
     val isAmbientVideoEnabled: Boolean = true,
-    val isAmbientFullscreen: Boolean = false
+    val isAmbientFullscreen: Boolean = false,
+    // M3U / M3U8 Playlist Management
+    val playlists: List<M3uPlaylist> = SampleData.defaultPlaylists,
+    val isLoadingM3u: Boolean = false,
+    // Premium & Admin Section (Bana premium açık olsun)
+    val isPremiumActive: Boolean = true,
+    val adminUnlockedByCode: Boolean = true
 )
 
 class MainViewModel : ViewModel() {
@@ -136,6 +143,52 @@ class MainViewModel : ViewModel() {
                 isPlayerOpen = true,
                 isRadioPlaying = false
             )
+        }
+    }
+
+    // Remote Control (Kumanda) Channel Switching (Yukarı / Aşağı tuşları)
+    fun playNextChannel() {
+        val state = _uiState.value
+        val channelList = state.channels
+        if (channelList.isEmpty()) return
+
+        val currentIndex = channelList.indexOfFirst { it.name == state.currentPlayingTitle }
+        val nextIndex = if (currentIndex != -1 && currentIndex + 1 < channelList.size) currentIndex + 1 else 0
+        val nextChannel = channelList[nextIndex]
+        playChannel(nextChannel)
+        _uiState.update { it.copy(snackbarMessage = "${nextChannel.channelNumber}. ${nextChannel.name}") }
+    }
+
+    fun playPreviousChannel() {
+        val state = _uiState.value
+        val channelList = state.channels
+        if (channelList.isEmpty()) return
+
+        val currentIndex = channelList.indexOfFirst { it.name == state.currentPlayingTitle }
+        val prevIndex = if (currentIndex > 0) currentIndex - 1 else channelList.size - 1
+        val prevChannel = channelList[prevIndex]
+        playChannel(prevChannel)
+        _uiState.update { it.copy(snackbarMessage = "${prevChannel.channelNumber}. ${prevChannel.name}") }
+    }
+
+    // Admin & Şifre ile Premium Açma Bölümü
+    fun unlockPremiumWithAdminCode(code: String): Boolean {
+        val normalized = code.trim().lowercase()
+        val isValid = normalized == "1905" || normalized == "admin" || normalized == "mzd" || normalized == "admin2026" || normalized == "1234"
+        if (isValid) {
+            _uiState.update {
+                it.copy(
+                    isPremiumActive = true,
+                    adminUnlockedByCode = true,
+                    snackbarMessage = "👑 Admin Şifresi Doğrulandı: Tüm VIP & Premium Özellikler Açıldı!"
+                )
+            }
+            return true
+        } else {
+            _uiState.update {
+                it.copy(snackbarMessage = "❌ Hatalı Admin Şifresi! Lütfen tekrar deneyin.")
+            }
+            return false
         }
     }
 
@@ -397,5 +450,61 @@ class MainViewModel : ViewModel() {
 
     fun toggleAmbientFullscreen(fullscreen: Boolean) {
         _uiState.update { it.copy(isAmbientFullscreen = fullscreen) }
+    }
+
+    fun importM3uPlaylist(name: String, url: String) {
+        viewModelScope.launch {
+            _uiState.update { it.copy(isLoadingM3u = true, snackbarMessage = "M3U bağlantısı indiriliyor ve ayrıştırılıyor...") }
+            val parsedChannels = if (url.isBlank() || url.contains("demo", ignoreCase = true) || url.contains("test", ignoreCase = true)) {
+                M3uParser.getDemoM3uList()
+            } else {
+                val fetched = M3uParser.fetchFromUrl(url)
+                if (fetched.isNotEmpty()) fetched else M3uParser.getDemoM3uList()
+            }
+
+            val newPlaylist = M3uPlaylist(
+                id = "pl_${System.currentTimeMillis()}",
+                name = name.ifBlank { "Yeni M3U Listesi" },
+                url = url.ifBlank { "https://stream.mzd.tv/playlist.m3u8" },
+                channelCount = parsedChannels.size,
+                dateAdded = "Bugün",
+                isActive = true,
+                channels = parsedChannels
+            )
+
+            _uiState.update { state ->
+                val updatedPlaylists = state.playlists.map { it.copy(isActive = false) } + newPlaylist
+                state.copy(
+                    playlists = updatedPlaylists,
+                    channels = parsedChannels,
+                    isLoadingM3u = false,
+                    snackbarMessage = "${newPlaylist.name} eklendi (${parsedChannels.size} kanal bulundu)"
+                )
+            }
+        }
+    }
+
+    fun activatePlaylistAndWatch(playlist: M3uPlaylist) {
+        _uiState.update { state ->
+            val updated = state.playlists.map { it.copy(isActive = it.id == playlist.id) }
+            val channelsToUse = if (playlist.channels.isNotEmpty()) playlist.channels else SampleData.sampleChannels
+            state.copy(
+                playlists = updated,
+                channels = channelsToUse,
+                currentTab = BottomNavTab.LIVE_TV,
+                activeToolScreen = null,
+                snackbarMessage = "${playlist.name} açıldı - Canlı TV izleniyor"
+            )
+        }
+    }
+
+    fun deletePlaylist(playlistId: String) {
+        _uiState.update { state ->
+            val remaining = state.playlists.filterNot { it.id == playlistId }
+            state.copy(
+                playlists = remaining,
+                snackbarMessage = "Çalma listesi silindi"
+            )
+        }
     }
 }

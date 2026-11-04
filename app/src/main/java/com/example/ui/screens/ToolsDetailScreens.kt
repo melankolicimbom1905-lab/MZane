@@ -61,10 +61,16 @@ fun ToolDetailContainer(
 // 1. Premium Screen
 @Composable
 fun PremiumScreen(
+    isPremiumActive: Boolean,
+    onUnlockWithCode: (String) -> Boolean,
     onBack: () -> Unit,
     onSupportClick: () -> Unit
 ) {
-    ToolDetailContainer(title = "Premium Ol - Destek Ol", onBack = onBack) {
+    var adminCodeInput by remember { mutableStateOf("") }
+    var codeError by remember { mutableStateOf(false) }
+    var codeSuccess by remember { mutableStateOf(false) }
+
+    ToolDetailContainer(title = "Premium & Admin Yönetimi", onBack = onBack) {
         Card(
             shape = RoundedCornerShape(16.dp),
             colors = CardDefaults.cardColors(containerColor = Color.Transparent),
@@ -81,14 +87,37 @@ fun PremiumScreen(
                     .padding(20.dp)
             ) {
                 Column {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Default.WorkspacePremium, contentDescription = null, tint = Color.White, modifier = Modifier.size(32.dp))
-                        Spacer(modifier = Modifier.width(10.dp))
-                        Text(text = "VIP Premium Kulübü", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 20.sp)
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(Icons.Default.WorkspacePremium, contentDescription = null, tint = Color.White, modifier = Modifier.size(32.dp))
+                            Spacer(modifier = Modifier.width(10.dp))
+                            Text(text = "MZD VIP Premium", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 20.sp)
+                        }
+
+                        Surface(
+                            shape = RoundedCornerShape(8.dp),
+                            color = Color(0x33000000)
+                        ) {
+                            Text(
+                                text = if (isPremiumActive) "👑 AKTİF (VIP)" else "STANDART",
+                                color = Color.White,
+                                fontWeight = FontWeight.ExtraBold,
+                                fontSize = 11.sp,
+                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
+                            )
+                        }
                     }
+
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(
-                        text = "Uygulamanın gelişimine katkıda bulunun; tüm VIP renk temalarının, 4'lü çoklu ekranın ve öncelikli akış arabelleğinin kilidini açın.",
+                        text = if (isPremiumActive)
+                            "Hesabınızda VIP Premium özellikler açık durumdadır. Tüm temalar, 4'lü çoklu ekran ve öncelikli akış arabelleği aktif."
+                        else
+                            "Geliştiriciye destek olarak veya Admin şifresi girerek tüm VIP özelliklerin kilidini açabilirsiniz.",
                         color = Color(0xFFFEF3C7),
                         fontSize = 13.sp
                     )
@@ -98,78 +127,417 @@ fun PremiumScreen(
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        Text(text = "Premium Avantajları", fontWeight = FontWeight.Bold, fontSize = 15.sp, color = MaterialTheme.colorScheme.onSurface)
-        Spacer(modifier = Modifier.height(8.dp))
+        // Admin Bölümü (Şifre ile Premium Açma)
+        Card(
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+            shape = RoundedCornerShape(14.dp),
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Column(modifier = Modifier.padding(16.dp)) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Default.AdminPanelSettings, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(24.dp))
+                    Spacer(modifier = Modifier.width(10.dp))
+                    Text(text = "Admin Bölümü (Şifre ile Premium Aç)", fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                }
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = "Yetkili admin şifresini (Ör: 1905 veya admin) girerek bu cihazda ve diğer kullanıcılarda tüm premium özellikleri anında aktifleştirebilirsiniz.",
+                    fontSize = 11.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
 
-        listOf(
-            "Reklamsız ve akıcı deneyim",
-            "4'lü Eşzamanlı Çoklu Ekran (Multi-Screen)",
-            "Tüm Özel VIP Temalar (Cyberpunk, Gold VIP, AMOLED)",
-            "Gelişmiş Teknik İstatistik & Arabellek İyileştirmeleri",
-            "Otomatik Trakt.tv Bulut Senkronizasyonu"
-        ).forEach { feature ->
-            Row(
-                modifier = Modifier.padding(vertical = 4.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Icon(Icons.Default.CheckCircle, contentDescription = null, tint = Color(0xFF10B981), modifier = Modifier.size(18.dp))
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(text = feature, fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Spacer(modifier = Modifier.height(12.dp))
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    OutlinedTextField(
+                        value = adminCodeInput,
+                        onValueChange = {
+                            adminCodeInput = it
+                            codeError = false
+                        },
+                        modifier = Modifier.weight(1f),
+                        placeholder = { Text("Admin Şifresi (Ör: 1905)") },
+                        singleLine = true,
+                        isError = codeError,
+                        shape = RoundedCornerShape(10.dp)
+                    )
+                    Spacer(modifier = Modifier.width(10.dp))
+                    Button(
+                        onClick = {
+                            val success = onUnlockWithCode(adminCodeInput)
+                            if (success) {
+                                codeSuccess = true
+                                codeError = false
+                                adminCodeInput = ""
+                            } else {
+                                codeError = true
+                                codeSuccess = false
+                            }
+                        },
+                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
+                        shape = RoundedCornerShape(10.dp)
+                    ) {
+                        Text(text = "Doğrula", color = Color.Black, fontWeight = FontWeight.Bold)
+                    }
+                }
+
+                if (codeSuccess) {
+                    Text(
+                        text = "✓ Tebrikler! Admin onayıyla tüm VIP özellikler başarıyla açıldı.",
+                        color = Color(0xFF10B981),
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(top = 6.dp)
+                    )
+                }
+                if (codeError) {
+                    Text(
+                        text = "❌ Hatalı şifre. Lütfen 1905 veya admin deneyin.",
+                        color = Color(0xFFEF4444),
+                        fontSize = 11.sp,
+                        modifier = Modifier.padding(top = 6.dp)
+                    )
+                }
             }
         }
 
-        Spacer(modifier = Modifier.weight(1f))
+        Spacer(modifier = Modifier.height(16.dp))
 
-        Button(
-            onClick = onSupportClick,
-            modifier = Modifier.fillMaxWidth().height(50.dp),
-            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFF59E0B)),
-            shape = RoundedCornerShape(12.dp)
-        ) {
-            Text(text = "Geliştiriciye Destek Ol (Aylık 49,99 ₺)", color = Color.Black, fontWeight = FontWeight.Bold)
+        Text(text = "Açık Olan VIP Özellikler", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurface)
+        Spacer(modifier = Modifier.height(6.dp))
+
+        listOf(
+            "4'lü Eşzamanlı Çoklu Ekran (Multi-Screen) İzleme",
+            "Sınırsız M3U / M3U8 Çalma Listesi İçe Aktarma ve Oynatma",
+            "Tüm Özel VIP Temalar (Cyberpunk, Gold VIP, AMOLED Gece)",
+            "Kumanda ile Hızlı Kanal Değiştirme (D-Pad)",
+            "Radyoda Mevsimler & Şömine Canlı Ambiyans Videoları"
+        ).forEach { feature ->
+            Row(
+                modifier = Modifier.padding(vertical = 3.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(Icons.Default.CheckCircle, contentDescription = null, tint = Color(0xFF10B981), modifier = Modifier.size(16.dp))
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(text = feature, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
         }
     }
 }
 
-// 2. Account Screen
+// 2. Account Screen (Hesap Yönetimi & M3U/M3U8 Listeleri)
 @Composable
 fun AccountScreen(
     accountInfo: AccountInfo,
+    playlists: List<M3uPlaylist>,
+    isLoadingM3u: Boolean,
+    onAddPlaylist: (name: String, url: String) -> Unit,
+    onActivateAndWatch: (M3uPlaylist) -> Unit,
+    onDeletePlaylist: (String) -> Unit,
     onBack: () -> Unit
 ) {
-    ToolDetailContainer(title = "Hesap Yönetimi", onBack = onBack) {
-        Card(
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
-            shape = RoundedCornerShape(16.dp),
-            modifier = Modifier.fillMaxWidth()
+    var showAddDialog by remember { mutableStateOf(false) }
+    var inputName by remember { mutableStateOf("") }
+    var inputUrl by remember { mutableStateOf("") }
+
+    ToolDetailContainer(title = "Hesap & M3U / M3U8 Yönetimi", onBack = onBack) {
+        LazyColumn(
+            verticalArrangement = Arrangement.spacedBy(14.dp),
+            modifier = Modifier.fillMaxSize()
         ) {
-            Column(modifier = Modifier.padding(16.dp)) {
+            // Subscription Details Card
+            item {
+                Card(
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+                    shape = RoundedCornerShape(16.dp),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column {
+                                Text(text = "Hesap Durumu", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                Text(text = accountInfo.status, fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color(0xFF10B981))
+                            }
+                            Surface(
+                                shape = RoundedCornerShape(8.dp),
+                                color = Color(0x3310B981)
+                            ) {
+                                Text(text = "Aktif Paket", color = Color(0xFF10B981), fontWeight = FontWeight.Bold, fontSize = 11.sp, modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp))
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(12.dp))
+                        Divider(color = MaterialTheme.colorScheme.surface)
+                        Spacer(modifier = Modifier.height(12.dp))
+
+                        AccountDetailRow(label = "Kullanıcı Adı", value = accountInfo.username)
+                        AccountDetailRow(label = "Son Kullanım Tarihi", value = accountInfo.expiryDate)
+                        AccountDetailRow(label = "Maksimum Bağlantı", value = "${accountInfo.activeConnections} / ${accountInfo.maxConnections} Aktif Cihaz")
+                        AccountDetailRow(label = "Sunucu Protokolü", value = accountInfo.serverProtocol)
+                    }
+                }
+            }
+
+            // M3U / M3U8 Add Section
+            item {
+                Card(
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+                    shape = RoundedCornerShape(16.dp),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(Icons.Default.PlaylistAdd, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(24.dp))
+                                Spacer(modifier = Modifier.width(10.dp))
+                                Text(text = "M3U / M3U8 Bağlantısı Ekle", fontWeight = FontWeight.Bold, fontSize = 15.sp)
+                            }
+
+                            Button(
+                                onClick = { showAddDialog = true },
+                                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
+                                shape = RoundedCornerShape(10.dp),
+                                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp)
+                            ) {
+                                Icon(Icons.Default.Add, contentDescription = null, tint = Color.Black, modifier = Modifier.size(16.dp))
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text(text = "Yeni Ekle", color = Color.Black, fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(6.dp))
+                        Text(
+                            text = "Kendi IPTV sağlayıcınızın .m3u veya .m3u8 linkini ekleyin, otomatik ayrıştırılsın ve anında canlı izlemeye başlayın.",
+                            fontSize = 11.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+            }
+
+            // Saved Playlists List
+            item {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Column {
-                        Text(text = "Hesap Durumu", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        Text(text = accountInfo.status, fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color(0xFF10B981))
-                    }
-                    Surface(
-                        shape = RoundedCornerShape(8.dp),
-                        color = Color(0x3310B981)
-                    ) {
-                        Text(text = "Aktif", color = Color(0xFF10B981), fontWeight = FontWeight.Bold, fontSize = 11.sp, modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp))
+                    Text(
+                        text = "KAYITLI ÇALMA LİSTELERİ (${playlists.size})",
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                }
+            }
+
+            items(playlists) { pl ->
+                Card(
+                    colors = CardDefaults.cardColors(
+                        containerColor = if (pl.isActive) MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)
+                        else MaterialTheme.colorScheme.surfaceVariant
+                    ),
+                    shape = RoundedCornerShape(14.dp),
+                    border = if (pl.isActive) androidx.compose.foundation.BorderStroke(1.5.dp, MaterialTheme.colorScheme.primary) else null,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(modifier = Modifier.padding(14.dp)) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.weight(1f)) {
+                                Icon(
+                                    Icons.Default.LiveTv,
+                                    contentDescription = null,
+                                    tint = if (pl.isActive) MaterialTheme.colorScheme.primary else Color.Gray,
+                                    modifier = Modifier.size(28.dp)
+                                )
+                                Spacer(modifier = Modifier.width(10.dp))
+                                Column {
+                                    Text(
+                                        text = pl.name,
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 15.sp,
+                                        color = MaterialTheme.colorScheme.onSurface
+                                    )
+                                    Text(
+                                        text = "${pl.channelCount} Kanal • ${pl.dateAdded}",
+                                        fontSize = 11.sp,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                            }
+
+                            if (pl.isActive) {
+                                Surface(
+                                    shape = RoundedCornerShape(6.dp),
+                                    color = MaterialTheme.colorScheme.primary
+                                ) {
+                                    Text(
+                                        text = "AKTİF LİSTE",
+                                        color = Color.Black,
+                                        fontWeight = FontWeight.ExtraBold,
+                                        fontSize = 10.sp,
+                                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
+                                    )
+                                }
+                            } else {
+                                IconButton(
+                                    onClick = { onDeletePlaylist(pl.id) },
+                                    modifier = Modifier.size(32.dp)
+                                ) {
+                                    Icon(Icons.Default.Delete, contentDescription = "Sil", tint = Color.Gray, modifier = Modifier.size(18.dp))
+                                }
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            text = pl.url,
+                            fontSize = 10.sp,
+                            color = Color.Gray,
+                            maxLines = 1
+                        )
+
+                        Spacer(modifier = Modifier.height(12.dp))
+
+                        // "Listeyi Aç ve İzle" Primary Action Button
+                        Button(
+                            onClick = { onActivateAndWatch(pl) },
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = if (pl.isActive) MaterialTheme.colorScheme.primary else Color(0xFF1E293B)
+                            ),
+                            shape = RoundedCornerShape(10.dp)
+                        ) {
+                            Icon(
+                                Icons.Default.PlayCircle,
+                                contentDescription = null,
+                                tint = if (pl.isActive) Color.Black else Color.White,
+                                modifier = Modifier.size(20.dp)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = "Listeyi Aç ve İzle",
+                                color = if (pl.isActive) Color.Black else Color.White,
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 13.sp
+                            )
+                        }
                     }
                 }
+            }
+        }
+    }
 
-                Spacer(modifier = Modifier.height(14.dp))
-                Divider(color = MaterialTheme.colorScheme.surface)
-                Spacer(modifier = Modifier.height(14.dp))
+    // Add M3U Dialog
+    if (showAddDialog) {
+        androidx.compose.ui.window.Dialog(onDismissRequest = { showAddDialog = false }) {
+            Surface(
+                shape = RoundedCornerShape(16.dp),
+                color = MaterialTheme.colorScheme.surface,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(modifier = Modifier.padding(20.dp)) {
+                    Text(
+                        text = "M3U / M3U8 Bağlantısı Ekle",
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Text(
+                        text = "IPTV servis sağlayıcınızın m3u veya m3u8 linkini girin",
+                        fontSize = 11.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
 
-                AccountDetailRow(label = "Kullanıcı Adı", value = accountInfo.username)
-                AccountDetailRow(label = "Son Kullanım Tarihi", value = accountInfo.expiryDate)
-                AccountDetailRow(label = "Maksimum Bağlantı", value = "${accountInfo.activeConnections} / ${accountInfo.maxConnections} Aktif Cihaz")
-                AccountDetailRow(label = "Sunucu Adresi", value = accountInfo.serverUrl)
-                AccountDetailRow(label = "Desteklenen Protokoller", value = accountInfo.serverProtocol)
+                    Spacer(modifier = Modifier.height(14.dp))
+
+                    OutlinedTextField(
+                        value = inputName,
+                        onValueChange = { inputName = it },
+                        label = { Text("Liste Adı (Örn: Spor & Ulusal)") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+
+                    Spacer(modifier = Modifier.height(10.dp))
+
+                    OutlinedTextField(
+                        value = inputUrl,
+                        onValueChange = { inputUrl = it },
+                        label = { Text("M3U / M3U8 URL Adresi") },
+                        placeholder = { Text("https://domain.com/playlist.m3u8") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+
+                    Spacer(modifier = Modifier.height(10.dp))
+
+                    Text(
+                        text = "Hızlı Hazır Şablonlar:",
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        SuggestionChip(
+                            onClick = {
+                                inputName = "Hızlı Test Listesi (M3U8)"
+                                inputUrl = "https://stream.mzd.tv/test_iptv.m3u8"
+                            },
+                            label = { Text("⚡ Test M3U8", fontSize = 10.sp) }
+                        )
+                        SuggestionChip(
+                            onClick = {
+                                inputName = "Türkiye Ulusal & Spor"
+                                inputUrl = "https://stream.mzd.tv/turkey_channels.m3u"
+                            },
+                            label = { Text("🇹🇷 TR Spor", fontSize = 10.sp) }
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.End
+                    ) {
+                        TextButton(onClick = { showAddDialog = false }) {
+                            Text("İptal")
+                        }
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Button(
+                            onClick = {
+                                showAddDialog = false
+                                onAddPlaylist(inputName, inputUrl)
+                                inputName = ""
+                                inputUrl = ""
+                            },
+                            enabled = !isLoadingM3u,
+                            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
+                        ) {
+                            Text("İndir & Listeyi Yükle", color = Color.Black, fontWeight = FontWeight.Bold)
+                        }
+                    }
+                }
             }
         }
     }
