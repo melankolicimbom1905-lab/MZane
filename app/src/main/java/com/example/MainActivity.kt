@@ -9,19 +9,15 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.model.AccountInfo
 import com.example.ui.AccountScreen
-import com.example.ui.HomeScreen
-import com.example.ui.theme.MZaneTheme
 import com.example.viewmodel.MainViewModel
+import com.example.viewmodel.ToolScreen
 
 class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
         setContent {
-            MZaneTheme {
-                MainScreen()
-            }
+            MainScreen()
         }
     }
 }
@@ -56,26 +52,9 @@ fun MainScreen(
             )
         }
 
-        ToolScreen.LOGIN -> {
-            LoginScreen(
-                onLogin = { email, password ->
-                    viewModel.login(email, password)
-                },
-                onBack = {
-                    viewModel.closeTool()
-                }
-            )
-        }
-
-        ToolScreen.HOME -> {
-            HomeScreen(
-                onOpenAccount = {
-                    viewModel.openTool(ToolScreen.ACCOUNT)
-                },
-                onOpenLogin = {
-                    viewModel.openTool(ToolScreen.LOGIN)
-                }
-            )
+        else -> {
+            // Burada projenin mevcut ana ekranı çağrılmalı.
+            // Eski MainActivity'de hangi ekran vardıysa onu kullan.
         }
     }
 }
