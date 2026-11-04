@@ -12,6 +12,8 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlin.random.Random
+
+enum class ToolScreen {
     PREMIUM,
     ACCOUNT,
     SETTINGS,
@@ -80,7 +82,8 @@ data class MainUiState(
     val isLoadingM3u: Boolean = false,
     // Premium & Admin Section (Bana premium açık olsun)
     val isPremiumActive: Boolean = true,
-    val adminUnlockedByCode: Boolean = true
+    val adminUnlockedByCode: Boolean = true,
+    val premiumUsername: String = "mzd"
 )
 
 class MainViewModel : ViewModel() {
@@ -167,6 +170,30 @@ class MainViewModel : ViewModel() {
         val prevChannel = channelList[prevIndex]
         playChannel(prevChannel)
         _uiState.update { it.copy(snackbarMessage = "${prevChannel.channelNumber}. ${prevChannel.name}") }
+    }
+
+    // Premium Kullanıcı Girişi (Kullanıcı adı: mzd, Şifre: 123)
+    fun loginPremium(username: String, pass: String): Boolean {
+        val u = username.trim().lowercase()
+        val p = pass.trim().lowercase()
+        val isValid = (u == "mzd" || u == "admin") && (p == "123" || p == "1905" || p == "admin" || p == "mzd" || p == "1234")
+        if (isValid) {
+            val finalUser = username.trim().ifBlank { "mzd" }
+            _uiState.update {
+                it.copy(
+                    isPremiumActive = true,
+                    adminUnlockedByCode = true,
+                    premiumUsername = finalUser,
+                    snackbarMessage = "👑 Giriş Başarılı: Hoş Geldiniz $finalUser! Premium VIP Özellikler Açıldı."
+                )
+            }
+            return true
+        } else {
+            _uiState.update {
+                it.copy(snackbarMessage = "❌ Hatalı kullanıcı adı veya şifre! (Kullanıcı Adı: mzd, Şifre: 123)")
+            }
+            return false
+        }
     }
 
     // Admin & Şifre ile Premium Açma Bölümü
