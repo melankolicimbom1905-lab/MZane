@@ -12,14 +12,6 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlin.random.Random
-data class MainUiState(
-    val currentTool: ToolScreen = ToolScreen.HOME,
-    val playlists: List<M3uPlaylist> = emptyList(),
-    val isLoadingM3u: Boolean = false,
-    val isLoggedIn: Boolean = false,
-    val errorMessage: String? = null
-)
-enum class ToolScreen {
     PREMIUM,
     ACCOUNT,
     SETTINGS,
