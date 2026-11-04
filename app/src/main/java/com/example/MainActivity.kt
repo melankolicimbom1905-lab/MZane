@@ -352,4 +352,4 @@ class MainActivity : ComponentActivity() {
                                     viewModel.playChannel(it)
                                 },
                                 onSelectMovie = {
-                                    viewModel.toggleSearch(fa
+                                    viewModel.toggleSearch(false)
