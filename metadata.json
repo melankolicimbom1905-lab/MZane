@@ -1,0 +1,6 @@
+{
+  "name": "StreamHub",
+  "description": "Canlı TV, Film, Dizi, Radyo, Çoklu Ekran ve gelişmiş IPTV Araçları içeren akıllı medya platformu.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
