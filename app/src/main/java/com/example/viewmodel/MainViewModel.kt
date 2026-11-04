@@ -88,8 +88,7 @@ data class MainUiState(
     val isLoadingM3u: Boolean = false,
     // Premium & Admin Section (Bana premium açık olsun)
     val isPremiumActive: Boolean = true,
-    val adminUnlockedByCode: Boolean = true,
-    val premiumUsername: String = "mzd"
+    val adminUnlockedByCode: Boolean = true
 )
 
 class MainViewModel : ViewModel() {
@@ -178,47 +177,22 @@ class MainViewModel : ViewModel() {
         _uiState.update { it.copy(snackbarMessage = "${prevChannel.channelNumber}. ${prevChannel.name}") }
     }
 
-    // Premium Kullanıcı Girişi (Kullanıcı adı: mzd, Şifre: 123)
-    fun loginPremium(username: String, pass: String): Boolean {
-        val u = username.trim().lowercase()
-        val p = pass.trim().lowercase()
-        val isValid = (u == "mzd" || u == "admin") && (p == "123" || p == "1905" || p == "admin" || p == "mzd" || p == "1234")
-        if (isValid) {
-            val finalUser = username.trim().ifBlank { "mzd" }
-            _uiState.update {
-                it.copy(
-                    isPremiumActive = true,
-                    adminUnlockedByCode = true,
-                    premiumUsername = finalUser,
-                    snackbarMessage = "👑 Giriş Başarılı: Hoş Geldiniz $finalUser! Premium VIP Özellikler Açıldı."
-                )
-            }
-            return true
-        } else {
-            _uiState.update {
-                it.copy(snackbarMessage = "❌ Hatalı kullanıcı adı veya şifre! (Kullanıcı Adı: mzd, Şifre: 123)")
-            }
-            return false
-        }
-    }
-
     // Admin & Şifre ile Premium Açma Bölümü
     fun unlockPremiumWithAdminCode(code: String): Boolean {
         val normalized = code.trim().lowercase()
-        val isValid = normalized == "123" || normalized == "1905" || normalized == "admin" || normalized == "mzd" || normalized == "admin2026" || normalized == "1234"
+        val isValid = normalized == "1905" || normalized == "admin" || normalized == "mzd" || normalized == "admin2026" || normalized == "1234"
         if (isValid) {
             _uiState.update {
                 it.copy(
                     isPremiumActive = true,
                     adminUnlockedByCode = true,
-                    premiumUsername = "mzd",
-                    snackbarMessage = "👑 Giriş Başarılı: Tüm VIP & Premium Özellikler Açıldı!"
+                    snackbarMessage = "👑 Admin Şifresi Doğrulandı: Tüm VIP & Premium Özellikler Açıldı!"
                 )
             }
             return true
         } else {
             _uiState.update {
-                it.copy(snackbarMessage = "❌ Hatalı Şifre! (Şifre: 123 veya 1905)")
+                it.copy(snackbarMessage = "❌ Hatalı Admin Şifresi! Lütfen tekrar deneyin.")
             }
             return false
         }
