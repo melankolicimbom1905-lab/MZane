@@ -16,7 +16,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.data.SampleData
@@ -62,15 +65,21 @@ fun ToolDetailContainer(
 @Composable
 fun PremiumScreen(
     isPremiumActive: Boolean,
+    premiumUsername: String = "mzd",
+    onLogin: (username: String, password: String) -> Boolean,
     onUnlockWithCode: (String) -> Boolean,
     onBack: () -> Unit,
     onSupportClick: () -> Unit
 ) {
-    var adminCodeInput by remember { mutableStateOf("") }
-    var codeError by remember { mutableStateOf(false) }
-    var codeSuccess by remember { mutableStateOf(false) }
+    var usernameInput by remember { mutableStateOf("mzd") }
+    var passwordInput by remember { mutableStateOf("123") }
+    var passwordVisible by remember { mutableStateOf(false) }
+    var loginError by remember { mutableStateOf(false) }
+    var loginSuccess by remember { mutableStateOf(false) }
+    var activeUsername by remember(premiumUsername) { mutableStateOf(premiumUsername) }
 
     ToolDetailContainer(title = "Premium & Admin Yönetimi", onBack = onBack) {
+        // VIP Banner
         Card(
             shape = RoundedCornerShape(16.dp),
             colors = CardDefaults.cardColors(containerColor = Color.Transparent),
@@ -103,7 +112,7 @@ fun PremiumScreen(
                             color = Color(0x33000000)
                         ) {
                             Text(
-                                text = if (isPremiumActive) "👑 AKTİF (VIP)" else "STANDART",
+                                text = if (isPremiumActive || loginSuccess) "👑 AKTİF (VIP - $activeUsername)" else "STANDART",
                                 color = Color.White,
                                 fontWeight = FontWeight.ExtraBold,
                                 fontSize = 11.sp,
@@ -114,10 +123,10 @@ fun PremiumScreen(
 
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(
-                        text = if (isPremiumActive)
-                            "Hesabınızda VIP Premium özellikler açık durumdadır. Tüm temalar, 4'lü çoklu ekran ve öncelikli akış arabelleği aktif."
+                        text = if (isPremiumActive || loginSuccess)
+                            "Hoş Geldiniz $activeUsername! Hesabınızda tüm VIP Premium özellikler sınırsız aktiftir. 4'lü çoklu ekran, M3U8 listeleri, VIP temalar ve kumanda kısayolları kullanılabilir."
                         else
-                            "Geliştiriciye destek olarak veya Admin şifresi girerek tüm VIP özelliklerin kilidini açabilirsiniz.",
+                            "VIP özelliklerin kilidini açmak için lütfen Kullanıcı Adı (mzd) ve Şifrenizi (123) girerek Giriş Yap butonuna basınız.",
                         color = Color(0xFFFEF3C7),
                         fontSize = 13.sp
                     )
@@ -127,7 +136,7 @@ fun PremiumScreen(
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // Admin Bölümü (Şifre ile Premium Açma)
+        // Premium Kullanıcı Girişi & Admin Bölümü
         Card(
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
             shape = RoundedCornerShape(14.dp),
@@ -135,78 +144,168 @@ fun PremiumScreen(
         ) {
             Column(modifier = Modifier.padding(16.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Default.AdminPanelSettings, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(24.dp))
+                    Icon(
+                        Icons.Default.Lock,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(24.dp)
+                    )
                     Spacer(modifier = Modifier.width(10.dp))
-                    Text(text = "Admin Bölümü (Şifre ile Premium Aç)", fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                    Text(
+                        text = "Premium Giriş & Yetki Doğrulama",
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 15.sp
+                    )
                 }
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
-                    text = "Yetkili admin şifresini (Ör: 1905 veya admin) girerek bu cihazda ve diğer kullanıcılarda tüm premium özellikleri anında aktifleştirebilirsiniz.",
+                    text = "Kullanıcı adı: mzd | Şifre: 123 bilgilerini girip 'Giriş Yap' butonuna dokunun.",
                     fontSize = 11.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
 
-                Spacer(modifier = Modifier.height(12.dp))
+                Spacer(modifier = Modifier.height(14.dp))
 
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically
+                // Username input
+                OutlinedTextField(
+                    value = usernameInput,
+                    onValueChange = {
+                        usernameInput = it
+                        loginError = false
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .testTag("premium_username_input"),
+                    label = { Text("Kullanıcı Adı") },
+                    placeholder = { Text("mzd") },
+                    leadingIcon = {
+                        Icon(Icons.Default.Person, contentDescription = "Kullanıcı", tint = MaterialTheme.colorScheme.primary)
+                    },
+                    singleLine = true,
+                    isError = loginError,
+                    shape = RoundedCornerShape(10.dp)
+                )
+
+                Spacer(modifier = Modifier.height(10.dp))
+
+                // Password input
+                OutlinedTextField(
+                    value = passwordInput,
+                    onValueChange = {
+                        passwordInput = it
+                        loginError = false
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .testTag("premium_password_input"),
+                    label = { Text("Şifre") },
+                    placeholder = { Text("123") },
+                    leadingIcon = {
+                        Icon(Icons.Default.VpnKey, contentDescription = "Şifre", tint = MaterialTheme.colorScheme.primary)
+                    },
+                    trailingIcon = {
+                        IconButton(onClick = { passwordVisible = !passwordVisible }) {
+                            Icon(
+                                if (passwordVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff,
+                                contentDescription = "Şifreyi Göster/Gizle"
+                            )
+                        }
+                    },
+                    visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                    singleLine = true,
+                    isError = loginError,
+                    shape = RoundedCornerShape(10.dp)
+                )
+
+                Spacer(modifier = Modifier.height(14.dp))
+
+                // Login action button
+                Button(
+                    onClick = {
+                        val ok = onLogin(usernameInput, passwordInput)
+                        if (ok) {
+                            loginSuccess = true
+                            loginError = false
+                            activeUsername = usernameInput.trim().ifBlank { "mzd" }
+                        } else {
+                            loginError = true
+                            loginSuccess = false
+                        }
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(48.dp)
+                        .testTag("premium_login_button"),
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
+                    shape = RoundedCornerShape(10.dp)
                 ) {
-                    OutlinedTextField(
-                        value = adminCodeInput,
-                        onValueChange = {
-                            adminCodeInput = it
-                            codeError = false
-                        },
-                        modifier = Modifier.weight(1f),
-                        placeholder = { Text("Admin Şifresi (Ör: 1905)") },
-                        singleLine = true,
-                        isError = codeError,
-                        shape = RoundedCornerShape(10.dp)
+                    Icon(Icons.Default.Login, contentDescription = null, tint = Color.Black)
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = "Giriş Yap",
+                        color = Color.Black,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 14.sp
                     )
-                    Spacer(modifier = Modifier.width(10.dp))
-                    Button(
-                        onClick = {
-                            val success = onUnlockWithCode(adminCodeInput)
-                            if (success) {
-                                codeSuccess = true
-                                codeError = false
-                                adminCodeInput = ""
-                            } else {
-                                codeError = true
-                                codeSuccess = false
-                            }
-                        },
-                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
-                        shape = RoundedCornerShape(10.dp)
+                }
+
+                // Success or Error Feedback
+                if (loginSuccess) {
+                    Spacer(modifier = Modifier.height(10.dp))
+                    Surface(
+                        color = Color(0x2210B981),
+                        shape = RoundedCornerShape(8.dp),
+                        modifier = Modifier.fillMaxWidth()
                     ) {
-                        Text(text = "Doğrula", color = Color.Black, fontWeight = FontWeight.Bold)
+                        Row(
+                            modifier = Modifier.padding(10.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(Icons.Default.CheckCircle, contentDescription = null, tint = Color(0xFF10B981), modifier = Modifier.size(20.dp))
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = "Giriş Başarılı! Hoş Geldiniz $activeUsername. Premium VIP özellikleri açık ve aktif!",
+                                color = Color(0xFF10B981),
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
                     }
                 }
 
-                if (codeSuccess) {
-                    Text(
-                        text = "✓ Tebrikler! Admin onayıyla tüm VIP özellikler başarıyla açıldı.",
-                        color = Color(0xFF10B981),
-                        fontSize = 11.sp,
-                        fontWeight = FontWeight.Bold,
-                        modifier = Modifier.padding(top = 6.dp)
-                    )
-                }
-                if (codeError) {
-                    Text(
-                        text = "❌ Hatalı şifre. Lütfen 1905 veya admin deneyin.",
-                        color = Color(0xFFEF4444),
-                        fontSize = 11.sp,
-                        modifier = Modifier.padding(top = 6.dp)
-                    )
+                if (loginError) {
+                    Spacer(modifier = Modifier.height(10.dp))
+                    Surface(
+                        color = Color(0x22EF4444),
+                        shape = RoundedCornerShape(8.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(10.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(Icons.Default.Error, contentDescription = null, tint = Color(0xFFEF4444), modifier = Modifier.size(20.dp))
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = "Hatalı Giriş! Lütfen Kullanıcı Adı: mzd, Şifre: 123 yazarak tekrar deneyin.",
+                                color = Color(0xFFEF4444),
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                    }
                 }
             }
         }
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        Text(text = "Açık Olan VIP Özellikler", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurface)
+        Text(
+            text = "Açık Olan VIP Premium Özellikler",
+            fontWeight = FontWeight.Bold,
+            fontSize = 14.sp,
+            color = MaterialTheme.colorScheme.onSurface
+        )
         Spacer(modifier = Modifier.height(6.dp))
 
         listOf(
@@ -214,15 +313,25 @@ fun PremiumScreen(
             "Sınırsız M3U / M3U8 Çalma Listesi İçe Aktarma ve Oynatma",
             "Tüm Özel VIP Temalar (Cyberpunk, Gold VIP, AMOLED Gece)",
             "Kumanda ile Hızlı Kanal Değiştirme (D-Pad)",
-            "Radyoda Mevsimler & Şömine Canlı Ambiyans Videoları"
+            "Radyoda Mevsimler, Şömine ve Okyanus Canlı Ambiyans Videoları",
+            "Öncelikli Yüksek Hızlı Akış ve Reklamsız Kesintisiz Kullanım"
         ).forEach { feature ->
             Row(
                 modifier = Modifier.padding(vertical = 3.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Icon(Icons.Default.CheckCircle, contentDescription = null, tint = Color(0xFF10B981), modifier = Modifier.size(16.dp))
+                Icon(
+                    Icons.Default.CheckCircle,
+                    contentDescription = null,
+                    tint = Color(0xFF10B981),
+                    modifier = Modifier.size(16.dp)
+                )
                 Spacer(modifier = Modifier.width(8.dp))
-                Text(text = feature, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(
+                    text = feature,
+                    fontSize = 12.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
             }
         }
     }
