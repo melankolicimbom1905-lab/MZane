@@ -377,4 +377,16 @@ object SampleData {
             effectType = "SPRING"
         )
     )
+
+    val defaultPlaylists = listOf(
+        M3uPlaylist(
+            id = "pl_default",
+            name = "MZD VIP Ulusal & Spor (M3U8)",
+            url = "https://stream.globalcdn.live:8080/get.php?username=vip&type=m3u_plus",
+            channelCount = 10,
+            dateAdded = "Bugün",
+            isActive = true,
+            channels = sampleChannels
+        )
+    )
 }

@@ -1,6 +1,7 @@
 package com.example
 
 import android.os.Bundle
+import android.view.KeyEvent
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
@@ -219,15 +220,20 @@ class MainActivity : ComponentActivity() {
                             when (tool) {
                                 ToolScreen.PREMIUM -> {
                                     PremiumScreen(
+                                        isPremiumActive = uiState.isPremiumActive,
+                                        onUnlockWithCode = { code -> viewModel.unlockPremiumWithAdminCode(code) },
                                         onBack = { viewModel.closeTool() },
-                                        onSupportClick = {
-                                            viewModel.closeTool()
-                                        }
+                                        onSupportClick = { viewModel.closeTool() }
                                     )
                                 }
                                 ToolScreen.ACCOUNT -> {
                                     AccountScreen(
                                         accountInfo = com.example.model.AccountInfo(),
+                                        playlists = uiState.playlists,
+                                        isLoadingM3u = uiState.isLoadingM3u,
+                                        onAddPlaylist = { name, url -> viewModel.importM3uPlaylist(name, url) },
+                                        onActivateAndWatch = { playlist -> viewModel.activatePlaylistAndWatch(playlist) },
+                                        onDeletePlaylist = { id -> viewModel.deletePlaylist(id) },
                                         onBack = { viewModel.closeTool() }
                                     )
                                 }
@@ -384,4 +390,47 @@ class MainActivity : ComponentActivity() {
             }
         }
     }
+
+    override fun onKeyDown(keyCode: Int, event: KeyEvent?): Boolean {
+        return when (keyCode) {
+            KeyEvent.KEYCODE_CHANNEL_UP,
+            KeyEvent.KEYCODE_DPAD_UP -> {
+                if (viewModel.uiState.value.isPlayerOpen) {
+                    viewModel.playNextChannel()
+                    true
+                } else {
+                    super.onKeyDown(keyCode, event)
+                }
+            }
+            KeyEvent.KEYCODE_CHANNEL_DOWN,
+            KeyEvent.KEYCODE_DPAD_DOWN -> {
+                if (viewModel.uiState.value.isPlayerOpen) {
+                    viewModel.playPreviousChannel()
+                    true
+                } else {
+                    super.onKeyDown(keyCode, event)
+                }
+            }
+            KeyEvent.KEYCODE_MEDIA_NEXT -> {
+                viewModel.playNextChannel()
+                true
+            }
+            KeyEvent.KEYCODE_MEDIA_PREVIOUS -> {
+                viewModel.playPreviousChannel()
+                true
+            }
+            KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE,
+            KeyEvent.KEYCODE_MEDIA_PLAY,
+            KeyEvent.KEYCODE_MEDIA_PAUSE -> {
+                if (viewModel.uiState.value.isRadioPlaying) {
+                    viewModel.toggleRadioPlayback()
+                    true
+                } else {
+                    super.onKeyDown(keyCode, event)
+                }
+            }
+            else -> super.onKeyDown(keyCode, event)
+        }
+    }
 }
+
