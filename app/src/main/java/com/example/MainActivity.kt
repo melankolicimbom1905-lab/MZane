@@ -353,3 +353,42 @@ class MainActivity : ComponentActivity() {
                                 },
                                 onSelectMovie = {
                                     viewModel.toggleSearch(false)
+                                    viewModel.playMovie(it)
+                                },
+                                onSelectSeries = {
+                                    viewModel.toggleSearch(false)
+                                    viewModel.setTab(BottomNavTab.SERIES)
+                                },
+                                onClose = { viewModel.toggleSearch(false) }
+                            )
+                        }
+
+                        // Profile Switcher Dialog
+                        if (uiState.showProfileDialog) {
+                            ProfileDialog(
+                                profiles = uiState.profiles,
+                                currentProfile = uiState.currentProfile,
+                                onSelectProfile = { viewModel.setProfile(it) },
+                                onDismiss = { viewModel.toggleProfileDialog(false) }
+                            )
+                        }
+
+                        // Quick Settings Dialog
+                        if (uiState.showQuickSettingsDialog) {
+                            QuickSettingsDialog(
+                                settings = uiState.settings,
+                                onOpenFullSettings = {
+                                    viewModel.openTool(ToolScreen.SETTINGS)
+                                },
+                                onToggleAdult = { viewModel.toggleAdultContent(it) },
+                                onToggleKids = { viewModel.toggleKidsMode(it) },
+                                onSelectTheme = { viewModel.updateTheme(it) },
+                                onDismiss = { viewModel.toggleQuickSettingsDialog(false) }
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
