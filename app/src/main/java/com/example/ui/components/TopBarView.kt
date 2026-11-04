@@ -73,18 +73,18 @@ fun TopBarView(
                 )
             }
 
-            // App Brand Center
+            // App Brand Center (MZD)
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
-                    text = "Stream",
-                    color = Color.White,
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.ExtraBold
+                    text = "MZD",
+                    color = MaterialTheme.colorScheme.primary,
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.Black
                 )
                 Text(
-                    text = "Hub",
-                    color = MaterialTheme.colorScheme.primary,
-                    fontSize = 18.sp,
+                    text = " TV",
+                    color = Color.White,
+                    fontSize = 20.sp,
                     fontWeight = FontWeight.ExtraBold
                 )
                 Spacer(modifier = Modifier.width(6.dp))

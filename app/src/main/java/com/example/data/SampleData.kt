@@ -251,7 +251,7 @@ object SampleData {
 
     val sampleRadios = listOf(
         RadioStation("r1", "Power FM", "Pop / Yabancı", "100.0 FM", "https://listen.powerapp.com.tr/powerfm/mpeg/icecast.audio", "Dua Lipa - Training Season", isFavorite = true),
-        RadioStation("r2", "Kral Pop", "Türkçe Pop", "94.7 FM", "http://46.20.7.126:80/stream/5/", "Tarkan - Sen Çok Güzelsin", isFavorite = true),
+        RadioStation("r2", "Power Türk", "Türkçe Pop", "99.8 FM", "https://listen.powerapp.com.tr/powerturk/mpeg/icecast.audio", "Tarkan - Sen Çok Güzelsin", isFavorite = true),
         RadioStation("r3", "Virgin Radio Türkiye", "Hit / Dans", "101.4 FM", "https://playerservices.streamtheworld.com/api/livestream-redirect/VIRGIN_RADIO.mp3", "Calvin Harris - Miracle", isFavorite = false),
         RadioStation("r4", "Fenomen Lounge", "Lounge / Chill", "Online", "https://ice1.somafm.com/groovesalad-128-mp3", "Sunset Chill Groove Project", isFavorite = true),
         RadioStation("r5", "Süper FM", "Hareketli Türkçe", "90.8 FM", "https://listen.powerapp.com.tr/powerfm/mpeg/icecast.audio", "Edis - Martılar", isFavorite = false),
@@ -310,5 +310,71 @@ object SampleData {
         SportsRadarItem("sr3", "Arsenal", "Chelsea", "Premier Lig", "89'", 3, 1, "Canlı", "🟨 Sarı kart (84')"),
         SportsRadarItem("sr4", "Bayern Münih", "Dortmund", "Bundesliga", "MS", 4, 2, "Bitti", "Maç sona erdi"),
         SportsRadarItem("sr5", "Barcelona", "Atletico Madrid", "La Liga", "22:00", 0, 0, "Başlamadı", "Kadrolar açıklandı")
+    )
+
+    val sampleAmbientThemes = listOf(
+        AmbientTheme(
+            id = "ocean",
+            title = "Okyanus Altı & Mercan Resifleri",
+            category = "Doğa & Deniz",
+            iconEmoji = "🌊",
+            description = "Tropik balıklar, mercanlar ve huzur veren derin deniz ışıkları",
+            videoUrl = "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4",
+            effectType = "OCEAN"
+        ),
+        AmbientTheme(
+            id = "fire",
+            title = "Çıtırdayan Şömine",
+            category = "Sıcak Ambiyans",
+            iconEmoji = "🔥",
+            description = "Alevlerin dansı ve dinlendirici sıcak şömine odunları",
+            videoUrl = "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4",
+            effectType = "FIRE"
+        ),
+        AmbientTheme(
+            id = "turkey",
+            title = "Türkiye Turizm & İlkleri",
+            category = "Turizm & Keşif",
+            iconEmoji = "🇹🇷",
+            description = "Kapadokya peri bacaları, Pamukkale travertenleri ve Boğaz manzarası",
+            videoUrl = "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4",
+            effectType = "TURKEY"
+        ),
+        AmbientTheme(
+            id = "rain",
+            title = "Huzurlu Yağmur",
+            category = "Mevsimler",
+            iconEmoji = "🌧️",
+            description = "Cama vuran yağmur damlaları ve sisli orman dinginliği",
+            videoUrl = "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/TearsOfSteel.mp4",
+            effectType = "RAIN"
+        ),
+        AmbientTheme(
+            id = "snow",
+            title = "Kış & Lapa Lapa Kar",
+            category = "Mevsimler",
+            iconEmoji = "❄️",
+            description = "Beyaza bürünmüş karlı dağlar ve süzülen kar taneleri",
+            videoUrl = "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/Sintel.mp4",
+            effectType = "SNOW"
+        ),
+        AmbientTheme(
+            id = "autumn",
+            title = "Sonbahar Ormanı",
+            category = "Mevsimler",
+            iconEmoji = "🍂",
+            description = "Altın sarısı dökülen yapraklar ve doğanın sonbahar renkleri",
+            videoUrl = "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
+            effectType = "AUTUMN"
+        ),
+        AmbientTheme(
+            id = "spring",
+            title = "İlkbahar & Çiçek Açan Doğa",
+            category = "Mevsimler",
+            iconEmoji = "🌸",
+            description = "Akan berrak ırmaklar ve bahar çiçeklerinin canlanışı",
+            videoUrl = "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerFun.mp4",
+            effectType = "SPRING"
+        )
     )
 }

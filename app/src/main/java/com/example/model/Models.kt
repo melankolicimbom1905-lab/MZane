@@ -97,6 +97,16 @@ data class RadioStation(
     val isFavorite: Boolean = false
 )
 
+data class AmbientTheme(
+    val id: String,
+    val title: String,
+    val category: String,
+    val iconEmoji: String,
+    val description: String,
+    val videoUrl: String,
+    val effectType: String
+)
+
 data class LiveMatch(
     val id: String,
     val team1: String,

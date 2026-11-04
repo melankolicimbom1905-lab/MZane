@@ -1,6 +1,6 @@
 {
-  "name": "StreamHub",
-  "description": "Canlı TV, Film, Dizi, Radyo, Çoklu Ekran ve gelişmiş IPTV Araçları içeren akıllı medya platformu.",
+  "name": "MZD",
+  "description": "Android TV Box ve telefonlara uyumlu Canlı TV, Film, Dizi, Ambiyans Arka Plan Videolu Radyo ve IPTV platformu.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

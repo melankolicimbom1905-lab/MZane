@@ -17,6 +17,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import android.media.MediaPlayer
+import android.net.Uri
+import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.model.BottomNavTab
 import com.example.ui.components.*
@@ -42,6 +45,33 @@ class MainActivity : ComponentActivity() {
                 uiState.snackbarMessage?.let { msg ->
                     snackbarHostState.showSnackbar(msg)
                     viewModel.clearSnackbar()
+                }
+            }
+
+            val context = LocalContext.current
+            val radioPlayer = remember { MediaPlayer() }
+
+            DisposableEffect(uiState.isRadioPlaying, uiState.currentRadioStation) {
+                if (uiState.isRadioPlaying && uiState.currentRadioStation != null) {
+                    try {
+                        radioPlayer.reset()
+                        radioPlayer.setDataSource(context, Uri.parse(uiState.currentRadioStation!!.streamUrl))
+                        radioPlayer.setOnPreparedListener { it.start() }
+                        radioPlayer.setOnErrorListener { _, _, _ -> true }
+                        radioPlayer.prepareAsync()
+                    } catch (e: Exception) {
+                        // Gracefully ignore stream exceptions
+                    }
+                } else {
+                    try {
+                        if (radioPlayer.isPlaying) radioPlayer.pause()
+                    } catch (e: Exception) {}
+                }
+                onDispose {
+                    try {
+                        radioPlayer.stop()
+                        radioPlayer.reset()
+                    } catch (e: Exception) {}
                 }
             }
 
@@ -162,6 +192,11 @@ class MainActivity : ComponentActivity() {
                                     radios = uiState.radios,
                                     isPlaying = uiState.isRadioPlaying,
                                     currentStation = uiState.currentRadioStation,
+                                    ambientThemes = uiState.ambientThemes,
+                                    selectedAmbientTheme = uiState.selectedAmbientTheme,
+                                    isAmbientEnabled = uiState.isAmbientVideoEnabled,
+                                    onSelectAmbientTheme = { viewModel.selectAmbientTheme(it) },
+                                    onToggleAmbientEnabled = { viewModel.toggleAmbientVideo(it) },
                                     onPlayStation = { viewModel.playRadio(it) },
                                     onTogglePlay = { viewModel.toggleRadioPlayback() }
                                 )

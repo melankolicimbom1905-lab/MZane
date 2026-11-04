@@ -627,11 +627,11 @@ fun AboutScreen(onBack: () -> Unit) {
                     Icon(Icons.Default.Tv, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(36.dp))
                 }
                 Spacer(modifier = Modifier.height(10.dp))
-                Text(text = "StreamHub IPTV & Media Suite", fontWeight = FontWeight.ExtraBold, fontSize = 18.sp)
+                Text(text = "MZD TV Box & Mobile Media Suite", fontWeight = FontWeight.ExtraBold, fontSize = 18.sp)
                 Text(text = "Sürüm: v5.4.18 (Build 2026.11)", fontSize = 12.sp, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
                 Spacer(modifier = Modifier.height(14.dp))
                 Text(
-                    text = "StreamHub; akıllı TV'ler, tabletler ve telefonlar için geliştirilmiş, çoklu ekran, canlı EPG, donanım ivmelendirmeli oynatıcı ve akıllı arabellek destekli profesyonel medya izleme platformudur.",
+                    text = "MZD; Android TV Box cihazları, akıllı televizyonlar ve Android telefonlar için özel olarak optimize edilmiş, çoklu ekran, canlı EPG, ambiyans arka plan videolu radyo ve akıllı arabellek destekli profesyonel medya izleme platformudur.",
                     fontSize = 12.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     lineHeight = 16.sp
@@ -644,9 +644,9 @@ fun AboutScreen(onBack: () -> Unit) {
         Spacer(modifier = Modifier.height(8.dp))
 
         listOf(
-            "Telegram Resmi Kanalı: @StreamHubCommunity",
-            "YouTube Rehber & Güncellemeler: @StreamHubOfficial",
-            "E-Posta Desteği: support@streamhub.tv",
+            "Telegram Resmi Kanalı: @MZDCommunity",
+            "YouTube Rehber & Güncellemeler: @MZDOfficial",
+            "E-Posta Desteği: support@mzd.tv",
             "Açık Kaynak Lisansları: MIT / Apache 2.0"
         ).forEach { info ->
             Row(modifier = Modifier.padding(vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {

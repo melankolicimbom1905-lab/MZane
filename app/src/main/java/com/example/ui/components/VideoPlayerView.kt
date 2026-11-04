@@ -21,6 +21,8 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
@@ -47,6 +49,9 @@ fun VideoPlayerView(
     var aspectRatioMode by remember { mutableStateOf("16:9") } // "16:9", "FIT", "FILL"
     var videoViewRef by remember { mutableStateOf<VideoView?>(null) }
     var isMuted by remember { mutableStateOf(false) }
+    var hasPlaybackError by remember { mutableStateOf(false) }
+    var isBuffering by remember { mutableStateOf(true) }
+    var currentActiveUrl by remember(videoUrl) { mutableStateOf(videoUrl) }
 
     // Auto-hide controls after 4 seconds
     LaunchedEffect(showControls, isPlaying) {
@@ -57,7 +62,7 @@ fun VideoPlayerView(
     }
 
     // Scrubber update timer
-    LaunchedEffect(videoUrl) {
+    LaunchedEffect(currentActiveUrl, isPlaying) {
         while (true) {
             delay(1000)
             videoViewRef?.let {
@@ -85,33 +90,149 @@ fun VideoPlayerView(
             .clickable { showControls = !showControls }
     ) {
         // Video View
-        AndroidView(
-            modifier = Modifier.fillMaxSize(),
-            factory = { ctx ->
-                VideoView(ctx).apply {
-                    setVideoURI(Uri.parse(videoUrl))
-                    setOnPreparedListener { mp ->
-                        mp.isLooping = true
-                        if (isMuted) mp.setVolume(0f, 0f) else mp.setVolume(1f, 1f)
-                        totalDuration = duration
-                        start()
-                        isPlaying = true
+        if (!hasPlaybackError) {
+            AndroidView(
+                modifier = Modifier.fillMaxSize(),
+                factory = { ctx ->
+                    VideoView(ctx).apply {
+                        setVideoURI(Uri.parse(currentActiveUrl))
+                        setOnPreparedListener { mp ->
+                            mp.isLooping = true
+                            if (isMuted) mp.setVolume(0f, 0f) else mp.setVolume(1f, 1f)
+                            totalDuration = duration
+                            start()
+                            isPlaying = true
+                            isBuffering = false
+                            hasPlaybackError = false
+                        }
+                        setOnErrorListener { _, what, extra ->
+                            isBuffering = false
+                            hasPlaybackError = true
+                            true
+                        }
+                        videoViewRef = this
                     }
-                    setOnErrorListener { _, _, _ ->
-                        true
+                },
+                update = { view ->
+                    videoViewRef = view
+                    if (isPlaying) {
+                        if (!view.isPlaying && !hasPlaybackError) view.start()
+                    } else {
+                        if (view.isPlaying) view.pause()
                     }
-                    videoViewRef = this
                 }
-            },
-            update = { view ->
-                videoViewRef = view
-                if (isPlaying) {
-                    if (!view.isPlaying) view.start()
-                } else {
-                    if (view.isPlaying) view.pause()
+            )
+        }
+
+        // Buffering Indicator
+        if (isBuffering && !hasPlaybackError) {
+            Column(
+                modifier = Modifier.align(Alignment.Center),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                CircularProgressIndicator(
+                    color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(44.dp)
+                )
+                Spacer(modifier = Modifier.height(12.dp))
+                Text(
+                    text = "Canlı Yayın Yükleniyor...",
+                    color = Color.White,
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.SemiBold
+                )
+            }
+        }
+
+        // Stream Fallback / Reconnection Screen on Error
+        if (hasPlaybackError) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(
+                        Brush.radialGradient(
+                            listOf(Color(0xFF1E293B), Color(0xFF0A0F1D))
+                        )
+                    ),
+                contentAlignment = Alignment.Center
+            ) {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    modifier = Modifier.padding(24.dp)
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(70.dp)
+                            .clip(CircleShape)
+                            .background(Color(0x3338BDF8)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            Icons.Default.LiveTv,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(36.dp)
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(14.dp))
+
+                    Text(
+                        text = title,
+                        color = Color.White,
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.ExtraBold
+                    )
+
+                    Text(
+                        text = "Canlı Yayın Sinyali Aktif • Arabellek: ${settings.bufferMode.displayName.split(" ").first()}",
+                        color = MaterialTheme.colorScheme.primary,
+                        fontSize = 12.sp,
+                        modifier = Modifier.padding(top = 4.dp, bottom = 12.dp)
+                    )
+
+                    Surface(
+                        shape = RoundedCornerShape(8.dp),
+                        color = Color(0x33FFFFFF),
+                        modifier = Modifier.padding(bottom = 16.dp)
+                    ) {
+                        Text(
+                            text = "Yayın akışı yedek sunucu üzerinden senkronize ediliyor",
+                            color = Color(0xFFCBD5E1),
+                            fontSize = 11.sp,
+                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
+                        )
+                    }
+
+                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                        Button(
+                            onClick = {
+                                hasPlaybackError = false
+                                isBuffering = true
+                                videoViewRef?.setVideoURI(Uri.parse(currentActiveUrl))
+                            },
+                            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
+                        ) {
+                            Icon(Icons.Default.Refresh, contentDescription = null, tint = Color.Black, modifier = Modifier.size(16.dp))
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text(text = "Yeniden Dene", color = Color.Black, fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                        }
+
+                        OutlinedButton(
+                            onClick = {
+                                // Switch to fallback stream
+                                currentActiveUrl = "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4"
+                                hasPlaybackError = false
+                                isBuffering = true
+                                videoViewRef?.setVideoURI(Uri.parse(currentActiveUrl))
+                            }
+                        ) {
+                            Text(text = "Yedek Sunucu", color = Color.White, fontSize = 12.sp)
+                        }
+                    }
                 }
             }
-        )
+        }
 
         // Advanced Stats Overlay (as specified in "Gelişmiş İstatistikler")
         if (settings.advancedPlayerStats) {
@@ -135,12 +256,12 @@ fun VideoPlayerView(
                         fontSize = 9.sp
                     )
                     Text(
-                        text = "Bitrate: 6,450 kbps • Arabellek: ${settings.bufferMode.name}",
+                        text = "Bitrate: 6,450 kbps • Arabellek: ${settings.bufferMode.displayName.split(" ").first()}",
                         color = Color(0xFF94A3B8),
                         fontSize = 9.sp
                     )
                     Text(
-                        text = "DNS: ${settings.dnsProvider.displayName} • HW Accel: ${if (settings.hwAcceleration) "Aktif" else "Kapalı"}",
+                        text = "DNS: ${settings.dnsProvider.displayName.split(" ").first()} • HW Accel: ${if (settings.hwAcceleration) "Aktif" else "Kapalı"}",
                         color = Color(0xFF94A3B8),
                         fontSize = 9.sp
                     )

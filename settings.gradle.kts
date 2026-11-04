@@ -22,6 +22,6 @@ dependencyResolutionManagement {
   }
 }
 
-rootProject.name = "StreamHub"
+rootProject.name = "MZD"
 
 include(":app")

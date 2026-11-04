@@ -45,4 +45,17 @@ class ExampleUnitTest {
     val updated = viewModel.uiState.value.channels.first { it.id == channel.id }
     assertEquals(!channel.isFavorite, updated.isFavorite)
   }
+
+  @Test
+  fun test_ambient_themes_flow() {
+    val viewModel = MainViewModel()
+    assertTrue(viewModel.uiState.value.ambientThemes.isNotEmpty())
+
+    val fireTheme = viewModel.uiState.value.ambientThemes.find { it.id == "fire" }!!
+    viewModel.selectAmbientTheme(fireTheme)
+    assertEquals("fire", viewModel.uiState.value.selectedAmbientTheme.id)
+
+    viewModel.toggleAmbientVideo(false)
+    assertEquals(false, viewModel.uiState.value.isAmbientVideoEnabled)
+  }
 }

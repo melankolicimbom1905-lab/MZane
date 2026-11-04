@@ -257,6 +257,8 @@ private fun MultiScreenCell(
     onAudioClick: () -> Unit,
     onChangeChannelClick: () -> Unit
 ) {
+    var hasCellError by remember(channel?.id) { mutableStateOf(false) }
+
     Box(
         modifier = modifier
             .background(Color(0xFF0F172A), RoundedCornerShape(8.dp))
@@ -267,24 +269,58 @@ private fun MultiScreenCell(
             )
     ) {
         if (channel != null) {
-            // Streaming Video
-            AndroidView(
-                modifier = Modifier.fillMaxSize(),
-                factory = { ctx ->
-                    VideoView(ctx).apply {
-                        setVideoURI(Uri.parse(channel.streamUrl))
-                        setOnPreparedListener { mp ->
-                            mp.isLooping = true
-                            if (!hasAudio) mp.setVolume(0f, 0f) else mp.setVolume(1f, 1f)
-                            start()
+            if (!hasCellError) {
+                // Streaming Video
+                AndroidView(
+                    modifier = Modifier.fillMaxSize(),
+                    factory = { ctx ->
+                        VideoView(ctx).apply {
+                            setVideoURI(Uri.parse(channel.streamUrl))
+                            setOnPreparedListener { mp ->
+                                mp.isLooping = true
+                                if (!hasAudio) mp.setVolume(0f, 0f) else mp.setVolume(1f, 1f)
+                                start()
+                            }
+                            setOnErrorListener { _, _, _ ->
+                                hasCellError = true
+                                true
+                            }
                         }
-                        setOnErrorListener { _, _, _ -> true }
+                    },
+                    update = { view ->
+                        // Android VideoView volume update
                     }
-                },
-                update = { view ->
-                    // Android VideoView volume toggle
+                )
+            } else {
+                // Clean fallback view when stream decoder fails
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(Color(0xFF1E293B)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Icon(
+                            Icons.Default.LiveTv,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(28.dp)
+                        )
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            text = channel.name,
+                            color = Color.White,
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Text(
+                            text = "Canlı Yayın Sinyali Aktif",
+                            color = Color(0xFF94A3B8),
+                            fontSize = 9.sp
+                        )
+                    }
                 }
-            )
+            }
 
             // Header Overlay
             Row(

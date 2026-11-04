@@ -70,7 +70,12 @@ data class MainUiState(
     val watchTimeTodayMin: Int = 185,
     val watchTimeWeekHours: Float = 14.2f,
     val recommendationItem: String? = null,
-    val snackbarMessage: String? = null
+    val snackbarMessage: String? = null,
+    // Radio Background Ambient Videos
+    val ambientThemes: List<AmbientTheme> = SampleData.sampleAmbientThemes,
+    val selectedAmbientTheme: AmbientTheme = SampleData.sampleAmbientThemes.first(),
+    val isAmbientVideoEnabled: Boolean = true,
+    val isAmbientFullscreen: Boolean = false
 )
 
 class MainViewModel : ViewModel() {
@@ -380,5 +385,17 @@ class MainViewModel : ViewModel() {
 
     fun clearSnackbar() {
         _uiState.update { it.copy(snackbarMessage = null) }
+    }
+
+    fun selectAmbientTheme(theme: AmbientTheme) {
+        _uiState.update { it.copy(selectedAmbientTheme = theme, snackbarMessage = "Arka plan: ${theme.title}") }
+    }
+
+    fun toggleAmbientVideo(enabled: Boolean) {
+        _uiState.update { it.copy(isAmbientVideoEnabled = enabled) }
+    }
+
+    fun toggleAmbientFullscreen(fullscreen: Boolean) {
+        _uiState.update { it.copy(isAmbientFullscreen = fullscreen) }
     }
 }
