@@ -227,15 +227,18 @@ class MainActivity : ComponentActivity() {
                                     )
                                 }
                                 ToolScreen.ACCOUNT -> {
-                                    AccountScreen(
-    accountInfo = com.example.model.AccountInfo(),
-    playlists = uiState.playlists,
-    isLoadingM3u = uiState.isLoadingM3u,
-    onAddPlaylist = { name, url -> viewModel.importM3uPlaylist(name, url) },
-    onActivateAndWatch = { playlist -> viewModel.activatePlaylistAndWatch(playlist) },
-    onDeletePlaylist = { id -> viewModel.deletePlaylist(id) },
-    onBack = { viewModel.closeTool() }
-)
+                                    ToolScreen.ACCOUNT -> {
+    AccountScreen(
+        accountInfo = com.example.model.AccountInfo(),
+        playlists = uiState.playlists,
+        isLoadingM3u = uiState.isLoadingM3u,
+        onAddPlaylist = { name, url -> viewModel.importM3uPlaylist(name, url) },
+        onActivateAndWatch = { playlist -> viewModel.activatePlaylistAndWatch(playlist) },
+        onDeletePlaylist = { id -> viewModel.deletePlaylist(id) },
+        onBack = { viewModel.closeTool() },
+        onLogin = { viewModel.openLogin() }
+    )
+                                    }
                                 }
                                 ToolScreen.SETTINGS -> {
                                     SettingsScreen(
