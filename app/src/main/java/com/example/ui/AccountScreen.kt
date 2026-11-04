@@ -20,15 +20,15 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.example.model.AccountInfo
-import com.example.model.Playlist
+import com.example.model.M3uPlaylist
 
 @Composable
 fun AccountScreen(
     accountInfo: AccountInfo,
-    playlists: List<Playlist>,
+    playlists: List<M3uPlaylist>,
     isLoadingM3u: Boolean,
     onAddPlaylist: (String, String) -> Unit,
-    onActivateAndWatch: (Playlist) -> Unit,
+    onActivateAndWatch: (M3uPlaylist) -> Unit,
     onDeletePlaylist: (String) -> Unit,
     onBack: () -> Unit,
     onLogin: () -> Unit = {}
@@ -45,7 +45,6 @@ fun AccountScreen(
         Text(text = "Hesap")
 
         Text(text = "Kullanıcı: ${accountInfo.username.ifBlank { "Misafir" }}")
-        Text(text = "Üyelik: ${accountInfo.membershipType}")
 
         TextButton(onClick = onLogin) {
             Text(text = "Giriş yap")
