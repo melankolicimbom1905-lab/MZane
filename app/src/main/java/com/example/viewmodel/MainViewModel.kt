@@ -1,11 +1,17 @@
 package com.example.viewmodel
 
-import androidx.lifecycle.ViewModel
+import android.app.Application
+import android.content.Context
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.data.SampleData
 import com.example.model.*
 import com.example.util.M3uParser
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.withContext
+import org.json.JSONArray
+import org.json.JSONObject
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -43,7 +49,7 @@ data class MainUiState(
     val currentTab: BottomNavTab = BottomNavTab.HOME,
     val currentProfile: UserProfile = SampleData.sampleProfiles.first(),
     val profiles: List<UserProfile> = SampleData.sampleProfiles,
-    val channels: List<Channel> = SampleData.sampleChannels,
+    val channels: List<Channel> = emptyList(),
     val movies: List<Movie> = SampleData.sampleMovies,
     val series: List<Series> = SampleData.sampleSeries,
     val radios: List<RadioStation> = SampleData.sampleRadios,
@@ -63,7 +69,7 @@ data class MainUiState(
     val currentRadioStation: RadioStation? = null,
     // Multi screen
     val multiScreenCount: Int = 2,
-    val multiScreenSlots: List<Channel?> = listOf(SampleData.sampleChannels[0], SampleData.sampleChannels[1], null, null),
+    val multiScreenSlots: List<Channel?> = listOf(null, null, null, null),
     val activeAudioSlotIndex: Int = 0,
     // Speed test
     val speedTestState: SpeedTestState = SpeedTestState(),
@@ -78,7 +84,7 @@ data class MainUiState(
     val isAmbientVideoEnabled: Boolean = true,
     val isAmbientFullscreen: Boolean = false,
     // M3U / M3U8 Playlist Management
-    val playlists: List<M3uPlaylist> = SampleData.defaultPlaylists,
+    val playlists: List<M3uPlaylist> = emptyList(),
     val isLoadingM3u: Boolean = false,
     // Premium & Admin Section (Bana premium açık olsun)
     val isPremiumActive: Boolean = true,
@@ -86,10 +92,86 @@ data class MainUiState(
     val premiumUsername: String = "mzd"
 )
 
-class MainViewModel : ViewModel() {
+class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     private val _uiState = MutableStateFlow(MainUiState())
     val uiState: StateFlow<MainUiState> = _uiState.asStateFlow()
+
+    private val prefs = application.getSharedPreferences("m3u_store", Context.MODE_PRIVATE)
+
+    init {
+        restorePlaylists()
+    }
+
+    // Manuel eklenen M3U listelerini cihaza kaydet (uygulama kapanınca silinmesin)
+    private fun savePlaylists() {
+        try {
+            val arr = JSONArray()
+            _uiState.value.playlists.forEach { p ->
+                arr.put(
+                    JSONObject().apply {
+                        put("id", p.id)
+                        put("name", p.name)
+                        put("url", p.url)
+                        put("channelCount", p.channelCount)
+                        put("dateAdded", p.dateAdded)
+                        put("isActive", p.isActive)
+                    }
+                )
+            }
+            prefs.edit().putString("playlists", arr.toString()).apply()
+        } catch (_: Exception) {
+        }
+    }
+
+    // Uygulama açılınca kayıtlı listeleri geri yükle, kanalları bağlantıdan tekrar indir
+    private fun restorePlaylists() {
+        val raw = prefs.getString("playlists", null) ?: return
+        val saved: List<M3uPlaylist> = try {
+            val arr = JSONArray(raw)
+            List(arr.length()) { i ->
+                val o = arr.getJSONObject(i)
+                M3uPlaylist(
+                    id = o.getString("id"),
+                    name = o.getString("name"),
+                    url = o.getString("url"),
+                    channelCount = o.optInt("channelCount", 0),
+                    dateAdded = o.optString("dateAdded", ""),
+                    isActive = o.optBoolean("isActive", false),
+                    channels = emptyList()
+                )
+            }
+        } catch (_: Exception) {
+            return
+        }
+        if (saved.isEmpty()) return
+
+        _uiState.update { it.copy(playlists = saved, isLoadingM3u = true) }
+
+        viewModelScope.launch {
+            val loaded = saved.map { p ->
+                val ch: List<Channel> = try {
+                    withContext(Dispatchers.IO) { M3uParser.fetchFromUrl(p.url) }
+                } catch (_: Exception) {
+                    emptyList()
+                }
+                p.copy(
+                    channels = ch,
+                    channelCount = if (ch.isNotEmpty()) ch.size else p.channelCount
+                )
+            }
+            _uiState.update { state ->
+                val activeChannels = loaded.firstOrNull { it.isActive }?.channels.orEmpty()
+                val newChannels = if (activeChannels.isNotEmpty()) activeChannels else state.channels
+                state.copy(
+                    playlists = loaded,
+                    channels = newChannels,
+                    multiScreenSlots = List(state.multiScreenCount) { i -> newChannels.getOrNull(i) },
+                    isLoadingM3u = false
+                )
+            }
+        }
+    }
 
     fun setTab(tab: BottomNavTab) {
         _uiState.update { it.copy(currentTab = tab, activeToolScreen = null) }
@@ -436,7 +518,7 @@ class MainViewModel : ViewModel() {
     }
 
     fun setMultiScreenCount(count: Int) {
-        val defaultChannels = SampleData.sampleChannels.take(count)
+        val defaultChannels = _uiState.value.channels.take(count)
         val slots = List(count) { i -> defaultChannels.getOrNull(i) }
         _uiState.update {
             it.copy(
@@ -478,58 +560,5 @@ class MainViewModel : ViewModel() {
     }
 
     fun importM3uPlaylist(name: String, url: String) {
-        viewModelScope.launch {
-            _uiState.update { it.copy(isLoadingM3u = true, snackbarMessage = "M3U bağlantısı indiriliyor ve ayrıştırılıyor...") }
-            val parsedChannels = if (url.isBlank() || url.contains("demo", ignoreCase = true) || url.contains("test", ignoreCase = true)) {
-                M3uParser.getDemoM3uList()
-            } else {
-                val fetched = M3uParser.fetchFromUrl(url)
-                if (fetched.isNotEmpty()) fetched else M3uParser.getDemoM3uList()
-            }
-
-            val newPlaylist = M3uPlaylist(
-                id = "pl_${System.currentTimeMillis()}",
-                name = name.ifBlank { "Yeni M3U Listesi" },
-                url = url.ifBlank { "https://stream.mzd.tv/playlist.m3u8" },
-                channelCount = parsedChannels.size,
-                dateAdded = "Bugün",
-                isActive = true,
-                channels = parsedChannels
-            )
-
-            _uiState.update { state ->
-                val updatedPlaylists = state.playlists.map { it.copy(isActive = false) } + newPlaylist
-                state.copy(
-                    playlists = updatedPlaylists,
-                    channels = parsedChannels,
-                    isLoadingM3u = false,
-                    snackbarMessage = "${newPlaylist.name} eklendi (${parsedChannels.size} kanal bulundu)"
-                )
-            }
-        }
-    }
-
-    fun activatePlaylistAndWatch(playlist: M3uPlaylist) {
-        _uiState.update { state ->
-            val updated = state.playlists.map { it.copy(isActive = it.id == playlist.id) }
-            val channelsToUse = if (playlist.channels.isNotEmpty()) playlist.channels else SampleData.sampleChannels
-            state.copy(
-                playlists = updated,
-                channels = channelsToUse,
-                currentTab = BottomNavTab.LIVE_TV,
-                activeToolScreen = null,
-                snackbarMessage = "${playlist.name} açıldı - Canlı TV izleniyor"
-            )
-        }
-    }
-
-    fun deletePlaylist(playlistId: String) {
-        _uiState.update { state ->
-            val remaining = state.playlists.filterNot { it.id == playlistId }
-            state.copy(
-                playlists = remaining,
-                snackbarMessage = "Çalma listesi silindi"
-            )
-        }
-    }
-}
+        if (url.isBlank()) {
+            _uiState.update { it.copy(snackbarMessage = "Lütfen bir M
