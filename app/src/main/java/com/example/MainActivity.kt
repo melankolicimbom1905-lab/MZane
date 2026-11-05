@@ -7,11 +7,13 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
 import androidx.compose.foundation.background
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
@@ -317,7 +319,7 @@ class MainActivity : ComponentActivity() {
                                     SeriesCalendarScreen(onBack = { viewModel.closeTool() })
                                 }
                                 ToolScreen.SPORTS_RADAR -> {
-                                    SportsRadarScreen(onBack = { viewModel.closeTool() })
+                                    MackolikScreen(onBack = { viewModel.closeTool() })
                                 }
                                 ToolScreen.RADIO -> {
                                     // Handled via BottomNavTab.RADIO
@@ -330,65 +332,20 @@ class MainActivity : ComponentActivity() {
 
                         // Full Screen Single Stream Player
                         if (uiState.isPlayerOpen && uiState.currentPlayingUrl != null) {
-                            VideoPlayerView(
-                                title = uiState.currentPlayingTitle ?: "Yayın",
-                                subtitle = uiState.currentPlayingSubtitle,
-                                videoUrl = uiState.currentPlayingUrl!!,
-                                settings = uiState.settings,
-                                onClose = { viewModel.closePlayer() }
-                            )
-                        }
-
-                        // Universal Search Modal
-                        if (uiState.isSearchOpen) {
-                            SearchModal(
-                                searchQuery = uiState.searchQuery,
-                                onQueryChange = { viewModel.updateSearchQuery(it) },
-                                channels = uiState.channels,
-                                movies = uiState.movies,
-                                series = uiState.series,
-                                onSelectChannel = {
-                                    viewModel.toggleSearch(false)
-                                    viewModel.playChannel(it)
-                                },
-                                onSelectMovie = {
-                                    viewModel.toggleSearch(false)
-                                    viewModel.playMovie(it)
-                                },
-                                onSelectSeries = {
-                                    viewModel.toggleSearch(false)
-                                    viewModel.setTab(BottomNavTab.SERIES)
-                                },
-                                onClose = { viewModel.toggleSearch(false) }
-                            )
-                        }
-
-                        // Profile Switcher Dialog
-                        if (uiState.showProfileDialog) {
-                            ProfileDialog(
-                                profiles = uiState.profiles,
-                                currentProfile = uiState.currentProfile,
-                                onSelectProfile = { viewModel.setProfile(it) },
-                                onDismiss = { viewModel.toggleProfileDialog(false) }
-                            )
-                        }
-
-                        // Quick Settings Dialog
-                        if (uiState.showQuickSettingsDialog) {
-                            QuickSettingsDialog(
-                                settings = uiState.settings,
-                                onOpenFullSettings = {
-                                    viewModel.openTool(ToolScreen.SETTINGS)
-                                },
-                                onToggleAdult = { viewModel.toggleAdultContent(it) },
-                                onToggleKids = { viewModel.toggleKidsMode(it) },
-                                onSelectTheme = { viewModel.updateTheme(it) },
-                                onDismiss = { viewModel.toggleQuickSettingsDialog(false) }
-                            )
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
+                            Box(modifier = Modifier.fillMaxSize()) {
+                                VideoPlayerView(
+                                    title = uiState.currentPlayingTitle ?: "Yayın",
+                                    subtitle = uiState.currentPlayingSubtitle,
+                                    videoUrl = uiState.currentPlayingUrl!!,
+                                    settings = uiState.settings,
+                                    onClose = { viewModel.closePlayer() }
+                                )
+                                // Sol / sağ kanal değiştirme butonları
+                                if (uiState.channels.any { it.name == uiState.currentPlayingTitle }) {
+                                    IconButton(
+                                        onClick = { viewModel.playPreviousChannel() },
+                                        modifier = Modifier
+                                            .align(Alignment.CenterStart)
+                                            .padding(start = 8.dp)
+                                            .background(Color.Black.copy(alpha = 0.45f), CircleShape)
+                          
