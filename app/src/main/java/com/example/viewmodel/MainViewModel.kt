@@ -561,4 +561,84 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     fun importM3uPlaylist(name: String, url: String) {
         if (url.isBlank()) {
-            _uiState.update { it.copy(snackbarMessage = "Lütfen bir M
+            _uiState.update { it.copy(snackbarMessage = "Lütfen bir M3U bağlantısı gir") }
+            return
+        }
+        viewModelScope.launch {
+            _uiState.update { it.copy(isLoadingM3u = true, snackbarMessage = "M3U bağlantısı indiriliyor ve ayrıştırılıyor...") }
+            val parsedChannels: List<Channel> = try {
+                withContext(Dispatchers.IO) { M3uParser.fetchFromUrl(url.trim()) }
+            } catch (_: Exception) {
+                emptyList()
+            }
+
+            if (parsedChannels.isEmpty()) {
+                _uiState.update {
+                    it.copy(isLoadingM3u = false, snackbarMessage = "Liste yüklenemedi veya içinde kanal yok. Bağlantıyı kontrol et.")
+                }
+                return@launch
+            }
+
+            val newPlaylist = M3uPlaylist(
+                id = "pl_${System.currentTimeMillis()}",
+                name = name.ifBlank { "Yeni M3U Listesi" },
+                url = url.trim(),
+                channelCount = parsedChannels.size,
+                dateAdded = "Bugün",
+                isActive = true,
+                channels = parsedChannels
+            )
+
+            _uiState.update { state ->
+                val updatedPlaylists = state.playlists.map { it.copy(isActive = false) } + newPlaylist
+                state.copy(
+                    playlists = updatedPlaylists,
+                    channels = parsedChannels,
+                    multiScreenSlots = List(state.multiScreenCount) { i -> parsedChannels.getOrNull(i) },
+                    isLoadingM3u = false,
+                    snackbarMessage = "${newPlaylist.name} eklendi (${parsedChannels.size} kanal bulundu)"
+                )
+            }
+            savePlaylists()
+        }
+    }
+
+    fun activatePlaylistAndWatch(playlist: M3uPlaylist) {
+        _uiState.update { state ->
+            val updated = state.playlists.map { it.copy(isActive = it.id == playlist.id) }
+            val channelsToUse = playlist.channels
+            state.copy(
+                playlists = updated,
+                channels = channelsToUse,
+                multiScreenSlots = List(state.multiScreenCount) { i -> channelsToUse.getOrNull(i) },
+                currentTab = BottomNavTab.LIVE_TV,
+                activeToolScreen = null,
+                snackbarMessage = "${playlist.name} açıldı - Canlı TV izleniyor"
+            )
+        }
+        savePlaylists()
+    }
+
+    fun deletePlaylist(playlistId: String) {
+        _uiState.update { state ->
+            val removed = state.playlists.firstOrNull { it.id == playlistId }
+            val remaining = state.playlists.filterNot { it.id == playlistId }
+            val next = if (removed?.isActive == true) {
+                remaining.firstOrNull()?.let { it.copy(isActive = true) }
+            } else null
+            val finalPlaylists = if (next != null) remaining.map { if (it.id == next.id) next else it } else remaining
+            val newChannels = when {
+                removed?.isActive != true -> state.channels
+                next != null -> next.channels
+                else -> emptyList()
+            }
+            state.copy(
+                playlists = finalPlaylists,
+                channels = newChannels,
+                multiScreenSlots = List(state.multiScreenCount) { i -> newChannels.getOrNull(i) },
+                snackbarMessage = "Çalma listesi silindi"
+            )
+        }
+        savePlaylists()
+    }
+}
